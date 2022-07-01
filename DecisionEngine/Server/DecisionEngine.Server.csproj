@@ -8,12 +8,15 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="6.0.1" />
+	<PackageReference Include="Swashbuckle.AspNetCore" Version="6.3.1" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Demo\Demo.csproj" />
     <ProjectReference Include="..\Client\DecisionEngine.Client.csproj" />
     <ProjectReference Include="..\Shared\DecisionEngine.Shared.csproj" />
   </ItemGroup>
+	
 
 
 </Project>
