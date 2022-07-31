@@ -1,38 +1,24 @@
-﻿using Demo;
-using Demo.Nodes;
-using DotNode;
+﻿using Expresser.Fsharp;
 using System.Linq.Expressions;
 
-var userInput = new UserInput(1, "New York", "California");
-var expressions = new Dictionary<string, DispositionType>
-{
-    {"mulTen(1 + 1) - mulTen(2*2) = 0", DispositionType.A },
-    {"Policy.Sos = true", DispositionType.B }
-};
+var sampleExpression1 = "(15/(7-(1+1))*3-(2+(1+1))+15/(7-(1+1))*3-(2+(1+1)))";
+Func<double> test1 = () => (15 / (7 - (1 + 1)) * 3 - (2 + (1 + 1)) + 15 / (7 - (1 + 1)) * 3 - (2 + (1 + 1)));
+var sampleExpression2 = "2 * (2 + 2)";
+var sampleExpression3 = "2*2+2";
+var sampleExpression4 = "(2+2)*(2+2)";
+var sampleExpression5 = "20/10*0";
+var sampleExpression6 = "sin(1)";
+Func<double> test6 = () => Math.Sin(1);
+var sampleExpression7 = "\"123\" = \"asd\"";
+Func<bool> test7 = () => "123" == "asd";
 
-var connections = new List<Connection>
-{
-    new InputCatalogConnection(input => new ProductIdentifier(input.Identifier)),
-    new CatalogPolicyConnection(product => new PolicyId(product.PolicyId)),
-    new InputShipmentConnection(input => new ShipmentPath(input.AddressFrom, input.AddressTo)),
-    new InputDecisionConnection((input, context) => context with { UserInput = input }),
-    new CatalogDecisionConnection((product, context) => context with { Product = product }),
-    new PolicyDecisionConnection((policy, context) => context with { Policy = policy }),
-    new ShipmentDecisionConnection((shipment, context) => context with { Shipment = shipment }),
-    new DicisionOutputConnection(decision => new UserOutput(decision.Disposition))
-};
+var expressionString = sampleExpression7;
+var testResult = test7();
 
-var builder = new NodeGraphBuilder();
-var nodeGraph = builder
-    .AddInputNode(new RadInputNode())
-    .AddNode(new CatalogNode())
-    .AddNode(new PolicyNode())
-    .AddNode(new ShipmentNode())
-    .AddNode(new DecisionNode(expressions))
-    .AddOutputNode(new DispositionOutputNode())
-    .Build();
-
-var compiler = new NodeGraphCompliler();
-var graphFunction = compiler.Compile(nodeGraph, connections);
-var result = graphFunction(userInput);
-Console.WriteLine($"Decision: {result}");
+var parsedExpression = Parser.Parse(expressionString);
+var linqExpression = LinqMapper.Map(parsedExpression);
+Console.WriteLine(linqExpression);
+var compiledFunction = Expression.Lambda<Func<bool>>(linqExpression).Compile();
+var result = compiledFunction();
+Console.WriteLine(result);
+Console.WriteLine(testResult);

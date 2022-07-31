@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\DotNode\DotNode.csproj" />
+    <ProjectReference Include="..\Expresser.FSharp\Expresser.FSharp.fsproj" />
     <ProjectReference Include="..\ExpressionParser\Expresser.csproj" />
   </ItemGroup>
 
