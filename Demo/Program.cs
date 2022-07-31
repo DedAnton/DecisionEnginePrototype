@@ -12,13 +12,13 @@ Func<double> test6 = () => Math.Sin(1);
 var sampleExpression7 = "\"123\" = \"asd\"";
 Func<bool> test7 = () => "123" == "asd";
 
-var expressionString = sampleExpression7;
-var testResult = test7();
+var expressionString = sampleExpression1;
+var testResult = test1();
 
 var parsedExpression = Parser.Parse(expressionString);
 var linqExpression = LinqMapper.Map(parsedExpression);
 Console.WriteLine(linqExpression);
-var compiledFunction = Expression.Lambda<Func<bool>>(linqExpression).Compile();
+var compiledFunction = Expression.Lambda<Func<double>>(linqExpression).Compile();
 var result = compiledFunction();
 Console.WriteLine(result);
 Console.WriteLine(testResult);

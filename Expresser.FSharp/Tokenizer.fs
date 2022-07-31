@@ -58,9 +58,9 @@ module Tokenizer =
                 | '"'::_-> value
                 | char::tail -> GetStringConstant tail (value @ [char])
                 | [] -> failwith "String constant has no end. Symbol \" expected in the end of string constant"
-            let constant = GetStringConstant stringExpression[1..] [] |> List.map string |> List.reduce (+)
+            let constant = GetStringConstant stringExpression [] |> List.map string |> List.reduce (+)
             let token = constant |> StringConstant
-            (stringExpression[constant.Length+2..], tokens @ [token])
+            (stringExpression[constant.Length+1..], tokens @ [token])
 
         let (|Double|_|) str =
             match System.Double.TryParse (str:string) with
@@ -129,45 +129,35 @@ module Tokenizer =
             (stringExpression[string.Length..], tokens @ [token])
 
         let GetOperatorToken (stringExpression:char list) (tokens: Token list) =
-            let IsNegate (tokens: Token list) =
-                if tokens.Length = 0
-                then false
-                else
-                match List.last tokens with 
-                | BinaryOperatorToken _ | FunctionToken _ | OpeningBracket -> true
-                | _ -> false
-            let token = 
+            let (token, tokenLength) = 
                 match stringExpression with
-                | '-'::_ when IsNegate tokens -> Negate
-                | '<'::'>'::_ -> NotEqual
-                | '>'::'='::_ -> GreaterThanOrEqual
-                | '<'::'='::_ -> LessThanOrEqual
-                | '='::_ -> Equal
-                | '>'::_ -> GreaterThan
-                | '<'::_ -> LessThan
-                | '+'::_ -> Add
-                | '-'::_ -> Subtract
-                | '*'::_ -> Multiply
-                | '/'::_ -> Divide
+                | '-'::_ when (tokens.Length > 0 && 
+                    match List.last tokens with
+                    | BinaryOperatorToken _ | FunctionToken _ | OpeningBracket -> true
+                    | _ -> false) -> (Negate, 1)
+                | '<'::'>'::_ -> (NotEqual, 2)
+                | '>'::'='::_ -> (GreaterThanOrEqual, 2)
+                | '<'::'='::_ -> (LessThanOrEqual, 2)
+                | '='::_ -> (Equal, 1)
+                | '>'::_ -> (GreaterThan, 1)
+                | '<'::_ -> (LessThan, 1)
+                | '+'::_ -> (Add, 1)
+                | '-'::_ -> (Subtract, 1)
+                | '*'::_ -> (Multiply, 1)
+                | '/'::_ -> (Divide, 1)
                 | _ -> failwith "Unexpected operator token"
-            let newStringExpression =
-                match token with
-                | NotEqual | GreaterThanOrEqual | LessThanOrEqual -> stringExpression[2..]
-                | _ -> stringExpression[1..]
-            (newStringExpression, tokens @ [token])
+            (stringExpression[tokenLength..], tokens @ [token])
 
         let rec TokenizeStep (stringExpression: char list) (tokens: Token list) =
-            if List.isEmpty stringExpression
-            then tokens
-            else 
-            match stringExpression[0] with
-            | '"' -> GetStringConstantToken stringExpression tokens ||> TokenizeStep
-            | '(' -> TokenizeStep stringExpression[1..] (tokens @ [OpeningBracket])
-            | ')' -> TokenizeStep stringExpression[1..] (tokens @ [ClosingBracket])
-            | ' ' -> TokenizeStep stringExpression[1..] tokens
-            | Digit _ -> GetNumberConstantToken stringExpression tokens ||> TokenizeStep
-            | Letter _-> GetTokenFromString stringExpression tokens ||> TokenizeStep
-            | OperatorChar _ -> GetOperatorToken stringExpression tokens ||> TokenizeStep
-            | unknownChar -> invalidOp $"Unknown symbol {unknownChar}"
+            match stringExpression with
+            | '"'::other -> GetStringConstantToken other tokens ||> TokenizeStep
+            | '('::other -> TokenizeStep other (tokens @ [OpeningBracket])
+            | ')'::other -> TokenizeStep other (tokens @ [ClosingBracket])
+            | ' '::other -> TokenizeStep other tokens
+            | Digit _::_ -> GetNumberConstantToken stringExpression tokens ||> TokenizeStep
+            | Letter _::_-> GetTokenFromString stringExpression tokens ||> TokenizeStep
+            | OperatorChar _::_-> GetOperatorToken stringExpression tokens ||> TokenizeStep
+            | [] -> tokens
+            | unknownChar::_ -> invalidOp $"Unknown symbol {unknownChar}"
         
         TokenizeStep stringExpression []
